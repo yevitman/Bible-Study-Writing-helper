@@ -1,0 +1,7 @@
+{
+  "name": "성경공부 원고집필 도우미 (Bible Study Manuscript Assistant)",
+  "description": "소그룹 성경공부, 강해 설교, 구역예배 인도자를 위한 성경 주해, 원어 묵상, 도입 예화, 나눔 질문, 실천 적용 및 원고 집필 도우미",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

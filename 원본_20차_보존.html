@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>성경공부 집필도우미</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root { color-scheme: light; --ink:#243047; --muted:#65728a; --line:#dfe5f0; --paper:#ffffff; --bg:#f3f5fb; --blue:#4657c8; --blue-soft:#eef0ff; --teal:#138b91; --coral:#e56a5d; --violet:#7855c7; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",Arial,sans-serif; font-size:14px; }
+    button,input,textarea { font:inherit; }
+    button { cursor:pointer; }
+    .app { width:min(100%,860px); margin:0 auto; min-height:100vh; background:var(--paper); box-shadow:0 0 28px #293b6810; }
+    .home { padding:44px 18px 48px; background:radial-gradient(ellipse at 12% 8%,#ffe6d9 0,transparent 35%),radial-gradient(ellipse at 90% 25%,#dce8ff 0,transparent 38%),linear-gradient(160deg,#f7f2ff 0%,#edf7ff 48%,#eaf8f3 100%); min-height:100vh; min-height:100svh; display:flex; flex-direction:column; justify-content:center; position:relative; overflow:hidden; }
+    .home-title { margin:0 auto 42px; max-width:560px; text-align:center; color:#29356f; font-size:33px; line-height:1.3; font-weight:900; letter-spacing:-.8px; text-wrap:balance; text-shadow:0 1px 0 #ffffffb8; }
+    .home-grid { display:grid; grid-template-columns:1fr; justify-items:center; gap:24px; width:100%; max-width:420px; margin:0 auto; }
+    .home-tile { width:156px; height:156px; min-height:0; border:1px solid #ffffffb8; border-radius:23px; padding:14px; color:white; background:linear-gradient(145deg,#ff8c70 0%,#e45d75 100%); box-shadow:0 12px 24px #b94f5b2b, inset 0 1px 0 #ffffff70; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:13px; transition:transform .16s ease,box-shadow .16s ease; }
+    .home-tile:active { transform:scale(.975); box-shadow:0 5px 12px #52628a22; }
+    .home-tile:nth-child(2) { background:linear-gradient(145deg,#24aaa5 0%,#3971d5 100%); box-shadow:0 12px 24px #277dba2b, inset 0 1px 0 #ffffff70; }
+    .tile-icon { width:56px; height:56px; border:1.5px solid #ffffffb8; border-radius:17px; display:flex; align-items:center; justify-content:center; font-size:29px; background:#ffffff26; box-shadow:inset 0 1px 2px #ffffff28; }
+    .tile-label { font-size:14px; font-weight:800; letter-spacing:-.2px; text-shadow:0 1px 2px #1b2b4625; }
+    .panel { display:none; }
+    .panel.open { display:block; }
+    .section-heading-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+    .section-heading-row .section-title, .section-heading-row .field-label { margin:0; }
+    .home-icon-btn { flex:0 0 30px; width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #d8ddff; border-radius:9px; background:#f0f1ff; color:#4657c8; font-size:20px; line-height:1; padding:0; box-shadow:0 2px 5px #4657c812; }
+    .home-icon-btn:active { background:#edf3ff; }
+    .drawer-list { display:flex; flex-direction:column; gap:9px; padding:12px 14px 18px; }
+    .saved-item { border:1px solid var(--line); border-radius:10px; padding:12px; background:#fff; display:flex; align-items:center; gap:10px; }
+    .saved-main { min-width:0; flex:1; }
+    .saved-title { font-weight:750; overflow-wrap:anywhere; }
+    .saved-url { display:block; margin-top:5px; color:#315fbb; font-size:12px; overflow-wrap:anywhere; text-decoration:none; }
+    .saved-actions { display:flex; gap:5px; flex-shrink:0; }
+    .empty-note { padding:18px 10px; text-align:center; color:var(--muted); font-size:13px; }
+    .link-form { display:flex; flex-direction:column; gap:9px; padding:14px; border-bottom:1px solid var(--line); background:#f5f3ff; }
+    .form-actions { display:flex; gap:7px; }
+    .form-actions .btn { flex:1; }
+    .panel .section { padding-top:13px; }
+    @media (max-width:380px) { .home { padding:34px 12px 38px; } .home-title { font-size:29px; margin-bottom:34px; letter-spacing:-.65px; } .home-grid { gap:20px; } .home-tile { width:144px; height:144px; padding:12px; border-radius:21px; } .tile-icon { width:50px; height:50px; font-size:25px; } .tile-label { font-size:13px; } }
+    .api-row { display:flex; gap:6px; margin-top:12px; align-items:center; }
+    .api-row input { min-width:0; flex:1; }
+    .section { padding:14px 14px; border-bottom:1px solid var(--line); background:linear-gradient(90deg,#ffffff 0%,#fbfaff 100%); }
+    .section-title { display:block; font-size:13px; font-weight:750; margin-bottom:8px; white-space:nowrap; }
+    .topic-row { display:flex; gap:7px; }
+    input,textarea { border:1px solid #d4dbe5; border-radius:8px; background:#fff; color:var(--ink); padding:10px 11px; outline:none; width:100%; }
+    input:focus,textarea:focus { border-color:var(--blue); box-shadow:0 0 0 2px #315fbb18; }
+    .topic-row input { min-width:0; flex:1; }
+    .btn { border:1px solid #d5dce6; border-radius:8px; padding:9px 11px; background:#fff; color:#344054; font-size:12px; font-weight:650; white-space:nowrap; }
+    .btn.primary { color:#fff; background:linear-gradient(135deg,#5d66df,#4657c8); border-color:#4657c8; box-shadow:0 3px 8px #4657c822; }
+    .btn.dark { color:#fff; background:linear-gradient(135deg,#485a7d,#34445b); border-color:#34445b; }
+    .btn.danger { color:#7b3030; background:#fff7f7; }
+    .steps { display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:8px 14px; background:linear-gradient(100deg,#f4f2ff,#eef8ff); border-bottom:1px solid #e2e4f5; }
+    .step:last-child { grid-column:1 / -1; }
+    .step { display:flex; align-items:center; gap:8px; width:100%; min-height:35px; padding:5px 9px; text-align:left; border:1px solid var(--line); border-radius:6px; background:#fff; color:#475467; font-size:12px; font-weight:650; white-space:nowrap; }
+    .step .num { display:inline-flex; flex:0 0 21px; width:21px; height:21px; align-items:center; justify-content:center; border-radius:5px; background:#edf0f5; color:#475467; font-size:10px; }
+    .step.active { border-color:#a7a7f6; background:linear-gradient(110deg,#eeedff,#e4f5ff); color:#4144ad; box-shadow:0 2px 6px #6262c414; }
+    .step.active .num { background:linear-gradient(135deg,#7770e8,#4657c8); color:white; }
+    .content { padding:10px 14px; display:flex; flex-direction:column; gap:10px; }
+    .instruction { padding:11px 12px; background:linear-gradient(115deg,#f1f0ff,#edf8ff); border:1px solid #dfe2fb; border-radius:10px; font-size:12px; line-height:1.65; color:#43536a; }
+    .field-label { display:block; font-size:12px; font-weight:750; margin-bottom:7px; white-space:nowrap; }
+    #promptInput { min-height:180px; resize:vertical; background:#fafbfd; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:12px; line-height:1.6; }
+    .generate { width:100%; padding:12px; font-size:13px; }
+    @media (min-width:700px) { .app { margin:18px auto; border-radius:12px; overflow:hidden; } .section,.content { padding-left:22px; padding-right:22px; } .steps { padding:7px 22px; } #promptInput { min-height:210px; } }
+    @media (max-width:360px) { .section,.content { padding-left:10px; padding-right:10px; } .steps { padding-left:10px; padding-right:10px; } .btn { padding:8px 9px; } }
+
+    /* 13차: 모든 화면의 색상·글꼴을 통일한 다채로운 디자인 */
+    :root {
+      --ink:#29345a; --muted:#687493; --line:#d9def5; --paper:#ffffff; --bg:#f1f3ff;
+      --blue:#5362d8; --blue-soft:#eeefff; --teal:#168f99; --coral:#e66a79; --violet:#8054c9;
+    }
+    body { background:linear-gradient(135deg,#f5f0ff 0%,#eef7ff 48%,#eaf8f4 100%); color:#29345a; }
+    .app { background:#fff; box-shadow:0 10px 40px #4d57921a; }
+    .panel { background:linear-gradient(180deg,#fbfaff 0%,#f7fbff 100%); }
+    .section { background:linear-gradient(110deg,#fff4f1 0%,#f6f3ff 55%,#eef8ff 100%); border-bottom-color:#e5e2fa; }
+    .section-title,.field-label { color:#5145a6; font-size:13px; font-weight:800; }
+    .link-form { background:linear-gradient(130deg,#fff0f3 0%,#f4f0ff 52%,#edf8ff 100%); border-bottom-color:#e0e1f7; }
+    input,textarea { border-color:#d7dcf4; background:#fff; color:#283354; border-radius:10px; }
+    input::placeholder,textarea::placeholder { color:#9aa2bd; }
+    input:focus,textarea:focus { border-color:#7774e8; box-shadow:0 0 0 3px #7774e81c; }
+    .steps { background:linear-gradient(100deg,#f1eaff 0%,#eaf5ff 55%,#e8f8f3 100%); border-bottom-color:#dedff5; }
+    .step { border-color:#dfe1f4; background:#fff; color:#58627f; border-radius:9px; }
+    #tab1 { --step-accent:#df6685; }
+    #tab2 { --step-accent:#e49a42; }
+    #tab3 { --step-accent:#36a6a1; }
+    #tab4 { --step-accent:#7b65d6; }
+    #tab5 { --step-accent:#4b82d4; }
+    .step .num { background:color-mix(in srgb,var(--step-accent,#7783bd) 14%,white); color:var(--step-accent,#5362d8); border-radius:7px; font-weight:800; }
+    .step.active { border-color:color-mix(in srgb,var(--step-accent,#7774e8) 42%,white); background:linear-gradient(120deg,color-mix(in srgb,var(--step-accent,#7774e8) 12%,white),#f3f4ff); color:#343d88; }
+    .step.active .num { background:var(--step-accent,#5362d8); color:#fff; }
+    .instruction { background:linear-gradient(115deg,#fff0f4 0%,#f3efff 50%,#eaf7ff 100%); border-color:#e2ddfa; color:#4a5475; }
+    .btn { border-color:#dfe2f3; background:#fff; color:#465171; border-radius:9px; }
+    .btn.primary { background:linear-gradient(130deg,#7165df 0%,#4f6bd8 52%,#378fc0 100%); border-color:#5a67d5; box-shadow:0 4px 10px #5d63cf24; }
+    .btn.dark { background:linear-gradient(130deg,#5268a0,#4a58a0); border-color:#4a58a0; }
+    .btn.danger { color:#b84763; background:linear-gradient(120deg,#fff1f3,#fff8f7); border-color:#f3d6df; }
+    .home-icon-btn { border-color:#dedbff; background:linear-gradient(135deg,#f3eaff,#eaf4ff); color:#5b54c6; }
+    .saved-item { border-color:#e1def7; background:linear-gradient(110deg,#fff 0%,#fcfaff 65%,#f3faff 100%); box-shadow:0 3px 10px #5a5c9b0a; }
+    .saved-title { color:#3b4386; }
+    .saved-url { color:#397cb8; }
+    .empty-note { color:#7b83a2; }
+    #promptInput { background:linear-gradient(135deg,#fff 0%,#fbfaff 55%,#f3faff 100%); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",Arial,sans-serif; font-size:13px; color:#303b61; height:clamp(220px, calc(100svh - 420px), 420px); min-height:0; max-height:calc(100svh - 390px); resize:none; }
+    .content { gap:8px; }
+    .content > div:first-child { min-height:0; }
+    .generate { flex:0 0 auto; margin-top:0; }
+    @media (max-height:700px) { #promptInput { height:clamp(205px, calc(100svh - 390px), 300px); max-height:calc(100svh - 360px); } .content { padding-top:8px; padding-bottom:8px; gap:7px; } #promptInput { line-height:1.48; } }
+    @media (max-width:380px) and (max-height:700px) { #promptInput { height:205px; max-height:calc(100svh - 350px); } .field-label { margin-bottom:5px; } .generate { padding:10px; } }
+    .topic-row .btn.danger { align-self:stretch; }
+    button:focus-visible { outline:3px solid #8c83ed80; outline-offset:2px; }
+    @media (max-width:380px) { .section-title,.field-label { font-size:12px; } .step { font-size:11px; } }
+
+    /* 15차: 집필 화면을 한 화면에 고정하고 프롬프트 창을 최대한 확장 */
+    #writerPanel.open {
+      height:100vh; height:100svh; min-height:0;
+      display:flex; flex-direction:column; overflow:hidden;
+    }
+    #writerPanel > .section { flex:0 0 auto; padding:7px 12px; }
+    #writerPanel .section-heading-row { margin-bottom:5px; }
+    #writerPanel .topic-row input { padding:8px 10px; }
+    #writerPanel .topic-row .btn { padding:7px 9px; }
+    #writerPanel .steps { flex:0 0 auto; padding:5px 12px; gap:4px; }
+    #writerPanel .step { min-height:30px; padding:4px 7px; gap:6px; }
+    #writerPanel .step .num { flex-basis:19px; width:19px; height:19px; }
+    #writerPanel .content {
+      flex:1 1 auto; min-height:0; padding:7px 12px 10px;
+      display:flex; flex-direction:column; gap:6px; overflow:hidden;
+    }
+    #writerPanel .content > div:first-child {
+      flex:1 1 auto; min-height:0; display:flex; flex-direction:column;
+    }
+    #writerPanel .field-label { flex:0 0 auto; margin-bottom:5px; }
+    #writerPanel #promptInput {
+      flex:1 1 auto; width:100%; min-height:0; height:0; max-height:none;
+      resize:none; padding:10px; font-size:13px; line-height:1.5; overflow:auto;
+    }
+    #writerPanel .generate {
+      flex:0 0 auto; width:100%; margin-top:auto; padding:11px 10px;
+    }
+    @media (max-height:700px) {
+      #writerPanel > .section { padding-top:5px; padding-bottom:5px; }
+      #writerPanel .steps { padding-top:4px; padding-bottom:4px; }
+      #writerPanel .step { min-height:27px; padding-top:3px; padding-bottom:3px; }
+      #writerPanel .content { padding-top:5px; padding-bottom:7px; gap:4px; }
+      #writerPanel .field-label { margin-bottom:3px; }
+      #writerPanel .generate { padding:9px 8px; }
+    }
+    /* 16차: 단계별 프롬프트 전체가 한눈에 들어오도록 자동 글자 크기 조절 */
+    #writerPanel #promptInput {
+      padding:6px 8px; font-size:10px; line-height:1.22; letter-spacing:-.12px;
+      overflow:hidden; overflow-wrap:anywhere; white-space:pre-wrap; scrollbar-width:none;
+    }
+    #writerPanel #promptInput::-webkit-scrollbar { display:none; }
+    #writerPanel .field-label { font-size:11px; }
+    #writerPanel .generate { padding:9px 8px; font-size:12px; }
+    @media (max-width:380px) {
+      #writerPanel #promptInput { padding:5px 6px; letter-spacing:-.2px; }
+      #writerPanel .steps { gap:3px; }
+      #writerPanel .step { gap:4px; padding-left:5px; padding-right:5px; font-size:10px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <section id="homeScreen" class="home">
+    <h1 class="home-title">성경공부 집필도우미</h1>
+    <div class="home-grid">
+      <button class="home-tile" onclick="openPanel('writerPanel')" aria-label="집필도우미 열기">
+        <span class="tile-icon" aria-hidden="true">✍</span>
+        <span class="tile-label">집필도우미</span>
+      </button>
+      <button class="home-tile" onclick="openPanel('manuscriptPanel')" aria-label="집필 중인 원고 열기">
+        <span class="tile-icon" aria-hidden="true">▤</span>
+        <span class="tile-label">집필 중인 원고</span>
+      </button>
+    </div>
+  </section>
+
+  <section id="writerPanel" class="panel">
+    <section class="section">
+      <div class="section-heading-row"><label class="section-title" for="bibleTopic">성경 본문 / 주제</label><button class="home-icon-btn" type="button" onclick="goHome()" aria-label="홈으로" title="홈으로">⌂</button></div>
+      <div class="topic-row"><input type="text" id="bibleTopic" placeholder="예: 창세기 12장 1-9절"><button class="btn danger" onclick="resetAll()">초기화</button></div>
+    </section>
+    <nav class="steps" aria-label="집필 단계">
+      <button id="tab1" class="step active" onclick="switchTab(1)"><span class="num">1</span><span>본문 전체 설명</span></button>
+      <button id="tab2" class="step" onclick="switchTab(2)"><span class="num">2</span><span>본문 전체 개요</span></button>
+      <button id="tab3" class="step" onclick="switchTab(3)"><span class="num">3</span><span>단락별 세부 주해</span></button>
+      <button id="tab4" class="step" onclick="switchTab(4)"><span class="num">4</span><span>구속사·교리 통합</span></button>
+      <button id="tab5" class="step" onclick="switchTab(5)"><span class="num">5</span><span>최종 원고 편집</span></button>
+    </nav>
+    <main class="content">
+      <div><label class="field-label" for="promptInput">ChatGPT에 전달할 프롬프트</label><textarea id="promptInput" spellcheck="false"></textarea></div>
+      <button id="generateBtn" class="btn primary generate" onclick="sendToChatGPT()">프롬프트 복사 후 ChatGPT 열기</button>
+    </main>
+  </section>
+
+  <section id="manuscriptPanel" class="panel">
+    <form class="link-form" onsubmit="saveManuscript(event)">
+      <div class="section-heading-row"><label class="field-label" for="manuscriptTitle">원고 제목</label><button class="home-icon-btn" type="button" onclick="goHome()" aria-label="홈으로" title="홈으로">⌂</button></div>
+      <input id="manuscriptTitle" type="text" placeholder="예: 창세기 12장 성경공부 원고" required>
+      <label class="field-label" for="manuscriptUrl">구글 문서 링크 주소</label>
+      <input id="manuscriptUrl" type="url" placeholder="https://docs.google.com/document/d/..." required>
+      <div class="form-actions"><button class="btn primary" type="submit" id="saveManuscriptBtn">원고 기록</button><button class="btn" type="button" onclick="clearManuscriptForm()">입력 취소</button></div>
+    </form>
+    <div id="manuscriptList" class="drawer-list"></div>
+  </section>
+</div>
+
+<script>
+  let currentStep = 1;
+  let editingLinkId = null;
+  let editingManuscriptId = null;
+  const manuscriptStorageKey = "bible_manuscript_links_v1";
+
+  function openPanel(id) {
+    document.getElementById("homeScreen").style.display = "none";
+    document.querySelectorAll(".panel").forEach(panel => panel.classList.toggle("open", panel.id === id));
+    if (id === "writerPanel") switchTab(currentStep || 1);
+    if (id === "manuscriptPanel") renderManuscripts();
+    window.scrollTo({top:0, behavior:"instant"});
+  }
+  function goHome() {
+    document.querySelectorAll(".panel").forEach(panel => panel.classList.remove("open"));
+    document.getElementById("homeScreen").style.display = "block";
+    window.scrollTo({top:0, behavior:"instant"});
+  }
+  function getManuscripts() {
+    try { return JSON.parse(localStorage.getItem(manuscriptStorageKey) || "[]"); }
+    catch { return []; }
+  }
+  function saveManuscript(event) {
+    event.preventDefault();
+    const title = document.getElementById("manuscriptTitle").value.trim();
+    const url = document.getElementById("manuscriptUrl").value.trim();
+    if (!title || !url) return;
+    const list = getManuscripts();
+    if (editingManuscriptId) {
+      const item = list.find(x => x.id === editingManuscriptId);
+      if (item) { item.title = title; item.url = url; item.updatedAt = new Date().toISOString(); }
+    } else {
+      list.unshift({id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())), title, url, updatedAt:new Date().toISOString()});
+    }
+    localStorage.setItem(manuscriptStorageKey, JSON.stringify(list));
+    clearManuscriptForm();
+    renderManuscripts();
+  }
+  function clearManuscriptForm() {
+    editingManuscriptId = null;
+    document.getElementById("manuscriptTitle").value = "";
+    document.getElementById("manuscriptUrl").value = "";
+    document.getElementById("saveManuscriptBtn").textContent = "원고 기록";
+  }
+  function editManuscript(id) {
+    const item = getManuscripts().find(x => x.id === id);
+    if (!item) return;
+    editingManuscriptId = id;
+    document.getElementById("manuscriptTitle").value = item.title;
+    document.getElementById("manuscriptUrl").value = item.url;
+    document.getElementById("saveManuscriptBtn").textContent = "수정 저장";
+    document.getElementById("manuscriptTitle").focus();
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+  function deleteManuscript(id) {
+    if (!confirm("이 원고 기록을 삭제하겠는가?")) return;
+    localStorage.setItem(manuscriptStorageKey, JSON.stringify(getManuscripts().filter(x => x.id !== id)));
+    if (editingManuscriptId === id) clearManuscriptForm();
+    renderManuscripts();
+  }
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'":"&#39;"}[ch]));
+  }
+  function renderManuscripts() {
+    const target = document.getElementById("manuscriptList");
+    const list = getManuscripts();
+    if (!list.length) { target.innerHTML = '<div class="empty-note">아직 기록된 원고가 없다.</div>'; return; }
+    target.innerHTML = list.map(item => `<article class="saved-item"><div class="saved-main"><div class="saved-title">${escapeHtml(item.title)}</div><a class="saved-url" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.url)}</a></div><div class="saved-actions"><button class="btn" type="button" onclick="editManuscript('${escapeHtml(item.id)}')" aria-label="수정">수정</button><button class="btn danger" type="button" onclick="deleteManuscript('${escapeHtml(item.id)}')" aria-label="삭제">삭제</button></div></article>`).join("");
+  }
+  const stepInfo = {
+    1: { title:"본문 전체 설명", promptTemplate: topic => `${topic}에 대한 전체 설명을 작성한다.\n\n[작성 지침]\n1. 역사적·지리적·문화적·문맥적 배경을 상세히 설명한다.\n2. 본문이 성경 전체의 구속사에서 차지하는 위치를 설명한다.\n3. 인간의 전적 타락과 무능, 하나님의 주권적 은혜, 무조건적 선택을 중심으로 핵심을 정리한다.\n4. 도서 형식의 문어체 평서문으로 작성한다.\n5. 본문이 직접 말하는 내용과 신학적 추론을 구분하고, 본문에 없는 사실을 만들어내지 않는다.` },
+    2: { title:"본문 전체 개요", promptTemplate: topic => `${topic}의 전체 개요를 단락별로 구성한다.\n\n[작성 지침]\n1. 본문 전체를 절 범위에 따라 논리적인 단락으로 나눈다.\n2. 각 단락에 제목, 핵심 내용, 문맥상 기능을 제시한다.\n3. 각 단락의 구원론적 의미와 신약 성경과의 연계성을 설명한다.\n4. 각 단락이 하나님의 구원 계획과 어떻게 연결되는지 제시한다.\n5. 문어체 평서문으로 작성하고 핵심 표현은 볼드체로 강조한다.` },
+    3: { title:"단락별 세부 주해", promptTemplate: topic => `${topic}의 단락별 세부 주해를 작성한다.\n\n[작성 지침]\n1. 각 단락의 성경 본문을 절 번호와 함께 제시한다.\n2. 핵심 단어와 문법, 역사적 배경, 문맥을 설명한다.\n3. 주석적 견해를 비교할 때 실제 확인할 수 있는 근거를 제시하며, 확인하지 않은 특정 주석서의 견해를 인용한 것처럼 쓰지 않는다.\n4. 인간의 전적 무능과 하나님의 주권적 은혜라는 구속사적 관점에서 해석한다.\n5. 본문 관찰, 해석, 교리적 의미를 구분하여 서술한다.` },
+    4: { title:"구속사·교리 통합", promptTemplate: topic => `${topic}의 설명과 개요, 세부 주해를 바탕으로 구속사적·교리적으로 통합한다.\n\n[작성 지침]\n1. 본문에서 하나님이 구원을 위해 행하시는 일을 중심으로 논증한다.\n2. 전적 타락, 무조건적 선택, 제한 속죄, 불가항력적 은혜, 성도의 견인의 오대교리와 관련된 부분을 본문 근거에 따라 설명한다. 모든 교리를 본문에 억지로 끼워 넣지 말고 관련성이 있는 교리만 다룬다.\n3. 구약과 신약의 연결은 약속과 성취, 모형과 실체, 언약과 성취의 관계를 구분한다.\n4. 인간의 결단이나 행위를 구원의 원인으로 제시하지 않는다. 믿음과 순종은 구원의 공로나 원인이 아니라 은혜의 결과라는 점을 명확히 한다.\n5. 핵심 주장마다 성경 근거를 제시하고 문어체로 작성한다.` },
+    5: { title:"최종 원고 편집", promptTemplate: topic => `아래에 제공할 ${topic} 관련 1~4단계 자료를 통합하여 성경공부 강의 원고로 편집한다.\n\n[작성 지침]\n1. 기존 자료의 신학적 주장과 논리 흐름을 보존하면서 중복, 비문, 장황한 문장을 정리한다.\n2. 서론-본문 단락별 해설-구속사적 통합-결론의 흐름으로 구성하되 불필요한 소제목을 늘리지 않는다.\n3. 개혁주의 후택설과 구원의 오대교리 관점을 유지하며, 인간 중심의 적용이나 구원 조건을 덧붙이지 않는다.\n4. 성경 인용은 임의로 생략하거나 의역하지 말고, 인용한 본문과 해설을 구분한다.\n5. 최종 결과는 구글 문서에 바로 붙여 넣을 수 있는 문어체 원고로 출력한다. 자료가 제공되지 않은 부분은 임의로 채우지 말고 확인이 필요하다고 표시한다.` }
+  };
+  const commonFormat = `\n\n[공통 출력 형식 지침]\n1. 핵심 단어와 강조 어구는 작은따옴표(' ')로 감싼다.\n2. 핵심 단어와 강조 어구는 마크다운 별표(**) 문법을 사용하지 말고, HTML 굵게 표시 태그(<strong>...</strong>)를 사용하여 작은따옴표까지 포함해 볼드체로 표시한다. 예: <strong>'하나님의 주권적 은혜'</strong>.\n3. 성경 본문은 성경 책 이름과 장을 먼저 표기하고, 다음에 절 번호와 본문 전체를 기록한다. 여러 절은 절 번호를 유지하되 한 문단 안에서 연속해 표기한다. 본문을 임의로 생략하지 않는다.\n4. 성경 본문을 인용하거나 표기할 때는 본문 글자색을 주홍색으로 표시한다. 성경 본문과 해설이 시각적으로 구분되도록 하며, 색상 지시를 실제 출력에 반영한다.\n5. 한 절을 인용할 때는 책 이름과 장·절을 표기한다. 여러 절을 인용할 때는 책 이름과 장을 먼저 표기하고 각 절 앞에 절 번호를 붙인다.\n6. 문어체 평서문을 사용하고, 불필요한 외래어는 한국어로 쓴다. 성경 원어가 필요하면 한국어 표기 뒤에 원어를 괄호로 병기한다.\n7. 본문이 직접 진술하는 내용과 신학적 해석을 구분한다.`;
+
+  window.addEventListener("load", () => {
+    const savedTopic = localStorage.getItem("bible_topic");
+    if (savedTopic) document.getElementById("bibleTopic").value = savedTopic;
+    updatePrompt();
+    renderManuscripts();
+  });
+  function switchTab(step) {
+    currentStep = step;
+    for (let i = 1; i <= 5; i++) document.getElementById(`tab${i}`).classList.toggle("active", i === step);
+    updatePrompt();
+  }
+  function updatePrompt() {
+    const topic = document.getElementById("bibleTopic").value.trim() || "창세기 12장";
+    localStorage.setItem("bible_topic", topic);
+    const field = document.getElementById("promptInput");
+    field.value = stepInfo[currentStep].promptTemplate(topic) + commonFormat + `\n\n[현재 단계]\n${currentStep}/5단계: ${stepInfo[currentStep].title}\n앞 단계의 결과가 있다면 함께 제공하여 연속성을 유지한다. 이 단계의 작업만 수행하고 다음 단계로 넘어가지 않는다.`;
+    fitPromptToWindow();
+  }
+  function fitPromptToWindow() {
+    const field = document.getElementById("promptInput");
+    if (!field || !document.getElementById("writerPanel").classList.contains("open")) return;
+    let size = 10;
+    field.style.fontSize = size + "px";
+    field.style.overflow = "hidden";
+    // 단계별 내용 길이에 맞춰 글자를 줄이되 읽을 수 있는 최소 크기를 유지한다.
+    while (size > 8.2 && field.scrollHeight > field.clientHeight + 1) {
+      size -= 0.3;
+      field.style.fontSize = size.toFixed(1) + "px";
+    }
+    // 매우 작은 화면에서도 내용이 잘리지 않도록 최후에는 내부 스크롤을 허용한다.
+    field.style.overflowY = field.scrollHeight > field.clientHeight + 1 ? "auto" : "hidden";
+  }
+  window.addEventListener("resize", () => requestAnimationFrame(fitPromptToWindow));
+  document.getElementById("bibleTopic").addEventListener("input", updatePrompt);
+  async function copyPromptOnly() {
+    const prompt = document.getElementById("promptInput").value.trim();
+    try { await navigator.clipboard.writeText(prompt); alert("프롬프트를 복사했다. ChatGPT 대화창에 붙여넣으면 된다."); }
+    catch { const field = document.getElementById("promptInput"); field.focus(); field.select(); document.execCommand("copy"); alert("프롬프트를 복사했다. ChatGPT 대화창에 붙여넣으면 된다."); }
+  }
+  async function sendToChatGPT() { await copyPromptOnly(); window.open("https://chatgpt.com/", "_blank", "noopener"); }
+  function resetAll() {
+    if (!confirm("현재 본문 주제를 초기화하겠는가?")) return;
+    localStorage.removeItem("bible_topic");
+    document.getElementById("bibleTopic").value = "";
+    updatePrompt();
+  }
+
+
+</script>
+</body>
+</html>
